@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 var builder = WebApplication.CreateSlimBuilder(args);
 AppJsonSerializerContext.Register(builder);
 builder.Services.AddCors();
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 app.UseCors(builder =>
