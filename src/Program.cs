@@ -13,7 +13,7 @@ app.UseCors(builder =>
     );
 });
 
-app.MapPost("/api/token", async ([FromBody] CodeAuthRequest request, [FromServices] IConfiguration config, [FromServices] IHttpClientFactory httpClientFactory) =>
+app.MapPost("/token", async ([FromBody] CodeAuthRequest request, [FromServices] IConfiguration config, [FromServices] IHttpClientFactory httpClientFactory) =>
 {
     FormUrlEncodedContent content = new(new Dictionary<string, string?>()
     {
