@@ -1,8 +1,10 @@
-﻿using System.Text.Json.Serialization;
+﻿using LgkProductions.Discord.Activity.Auth;
+using System.Text.Json.Serialization;
 
-namespace LgkProductions.Discord.Activity.Auth;
+namespace LgkProductions.Discord.Activity;
 
 [JsonSerializable(typeof(DiscordTokenResponse))]
+[JsonSerializable(typeof(DiscordUser))]
 [JsonSerializable(typeof(CodeAuthRequest))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {

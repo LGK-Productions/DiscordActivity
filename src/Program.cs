@@ -1,3 +1,4 @@
+using LgkProductions.Discord.Activity;
 using LgkProductions.Discord.Activity.Auth;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,26 +15,26 @@ app.UseCors(builder =>
     );
 });
 
-app.MapPost("/token", async ([FromBody] CodeAuthRequest request, [FromServices] IConfiguration config, [FromServices] IHttpClientFactory httpClientFactory) =>
+app.MapPost("/token", async ([FromBody] CodeAuthRequest request, [FromServices] DiscordClient client) =>
 {
-    FormUrlEncodedContent content = new(new Dictionary<string, string?>()
-    {
-        { "client_id", config["DiscordClientId"] },
-        { "client_secret", config["DiscordClientSecret"] },
-        { "grant_type", "authorization_code" },
-        { "code", request.Code }
-    });
+    var token = await client.RequestAccessTokenAsync(request.Code);
+    if (token is null)
+        return Results.BadRequest("Invalid code");
 
-    var client = httpClientFactory.CreateClient();
-    using var response = await client.PostAsync("https://discord.com/api/oauth2/token", content);
-    if (!response.IsSuccessStatusCode)
-        return Results.StatusCode((int)response.StatusCode);
+    return Results.Ok(token);
+});
 
-    var tokenResponse = await response.Content.ReadFromJsonAsync(AppJsonSerializerContext.Default.DiscordTokenResponse);
-    if (tokenResponse is null)
-        return Results.BadRequest();
+app.MapPost("/token/user", async ([FromBody] CodeAuthRequest request, [FromServices] DiscordClient client) =>
+{
+    var token = await client.RequestAccessTokenAsync(request.Code);
+    if (token is null)
+        return Results.BadRequest("Invalid code");
 
-    return Results.Ok(tokenResponse.AccessToken);
+    var user = await client.RequestUserAsync(token);
+    if (token is null)
+        return Results.BadRequest("Invalid token");
+
+    return Results.Ok(user);
 });
 
 app.Run();
