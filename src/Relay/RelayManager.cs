@@ -18,10 +18,10 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
     public async Task RunSocketLoopAsync(WebSocket socket, CancellationToken cancellation)
     {
         _logger.NewSocket(socket);
+
+        ConnectionInfo? connection = null;
         try
         {
-            ConnectionInfo? connection = null;
-
             while (socket.State == WebSocketState.Open && !cancellation.IsCancellationRequested)
             {
                 var buffer = await socket.ReceiveAsync();
@@ -74,7 +74,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
         finally
         {
             _logger.SocketDisconnected(socket);
-            // ToDo: Notify peers?!
+            OnConnectionTerminated(connection);
         }
     }
 
@@ -140,6 +140,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
 
         await socket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation);
     }
+
     async ValueTask OnRelay(WebSocket socket, ConnectionInfo connection, RelayMessageRelay message, CancellationToken cancellation)
     {
         if (connection.Player.Id != message.Header.FromAllocationId)
@@ -172,7 +173,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
         await targetSocket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation);
     }
 
-    async ValueTask OnDisconnect(WebSocket socket, ConnectionInfo connection, RelayMessageFromTo message, CancellationToken cancellation)
+    static async ValueTask OnDisconnect(WebSocket socket, ConnectionInfo connection, RelayMessageFromTo message, CancellationToken cancellation)
     {
         if (connection.Player.Id != message.FromAllocationId)
             throw new UnreachableException("Relay message from wrong player");
@@ -182,6 +183,20 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
         writer.Write(message);
 
         await socket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation);
+    }
+
+    void OnConnectionTerminated(ConnectionInfo? connection)
+    {
+        if (connection is null)
+            return;
+
+        var (game, player) = connection.Value;
+        if (game.Host.Id != player.Id)
+            return;
+
+        _registry.Cleanup(game);
+
+        // ToDo: Notify peers
     }
 
     async ValueTask SendError(WebSocket socket, RelayAllocationId allocationId, RelayErrorCode error, CancellationToken cancellation)

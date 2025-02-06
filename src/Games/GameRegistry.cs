@@ -61,4 +61,16 @@ public sealed class GameRegistry
         (game, player) = entry;
         return true;
     }
+
+    public void Cleanup(GameInstance instance)
+    {
+        _games.TryRemove(KeyValuePair.Create(instance.InstanceId, instance));
+
+        foreach (var player in instance)
+        {
+            ServerConnectionData connectionData = new(instance.Id, player.Id);
+            ConnectionInfo connectionInfo = new(instance, player);
+            _connectionLookup.TryRemove(KeyValuePair.Create(connectionData, connectionInfo));
+        }
+    }
 }
