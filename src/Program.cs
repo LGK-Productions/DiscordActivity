@@ -11,6 +11,7 @@ AppJsonSerializerContext.Register(builder);
 builder.Services.AddCors();
 builder.Services.AddHttpClient();
 
+builder.Services.AddHttpClient<DiscordClient>();
 builder.Services.AddSingleton<GameRegistry>();
 builder.Services.AddSingleton<RelayManager>();
 

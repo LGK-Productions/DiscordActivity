@@ -1,4 +1,13 @@
-# For more info on HTTP files go to https://aka.ms/vs/httpfile
+### Authenticate
+
+POST http://localhost:5063/token
+Content-Type: application/json
+
+{
+  "code": "6df6e9c7-6c20-4e6d-aadb-7ae64282afda"
+}
+
+### Allocate Relay
 
 POST http://localhost:5063/api/relay/allocate
 Content-Type: application/json
