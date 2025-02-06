@@ -3,7 +3,7 @@ using System.Net.WebSockets;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Relay.Messages;
 
-namespace LGKProductions.GamePlay.Server;
+namespace LgkProductions.Discord.Activity;
 
 public static partial class Log
 {
