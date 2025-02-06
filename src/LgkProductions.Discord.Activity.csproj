@@ -15,4 +15,8 @@
 		<Content Include="../README.md" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<PackageReference Include="Sentry.AspNetCore" Version="5.3.0" />
+	</ItemGroup>
+
 </Project>

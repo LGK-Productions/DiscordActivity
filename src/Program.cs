@@ -5,6 +5,11 @@ using LgkProductions.Discord.Activity.Relay;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateSlimBuilder(args);
+builder.WebHost.UseSentry(o =>
+{
+    o.Dsn = "https://bb21172fbed2d6da867559bae49b3d29@o4507300503617536.ingest.de.sentry.io/4508774712672336";
+    o.TracesSampleRate = 1.0;
+});
 
 AppJsonSerializerContext.Register(builder);
 
