@@ -1,0 +1,16 @@
+{
+  "name": "unity-discord-activity",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "typescript": "~5.6.2",
+    "vite": "^6.0.1"
+  },
+  "dependencies": {
+    "@discord/embedded-app-sdk": "^1.7.1"
+  }
+}
