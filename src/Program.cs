@@ -1,11 +1,18 @@
 using LgkProductions.Discord.Activity;
 using LgkProductions.Discord.Activity.Auth;
+using LgkProductions.Discord.Activity.Games;
+using LgkProductions.Discord.Activity.Relay;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateSlimBuilder(args);
+
 AppJsonSerializerContext.Register(builder);
+
 builder.Services.AddCors();
 builder.Services.AddHttpClient();
+
+builder.Services.AddSingleton<GameRegistry>();
+builder.Services.AddSingleton<RelayManager>();
 
 var app = builder.Build();
 app.UseCors(builder =>
@@ -14,6 +21,22 @@ app.UseCors(builder =>
         app.Configuration.GetValue<string[]>("CorsOrigins") ?? []
     );
 });
+app.UseWebSockets();
+
+app.Map(
+    "/",
+    async ([FromServices] GameRegistry reg, [FromServices] RelayManager relayManager, HttpContext ctx, CancellationToken cancellation) =>
+    {
+        if (!ctx.WebSockets.IsWebSocketRequest)
+            return Results.BadRequest();
+
+        var socket = await ctx.WebSockets.AcceptWebSocketAsync();
+
+        await relayManager.RunSocketLoopAsync(socket, cancellation);
+
+        return Results.Ok();
+    }
+);
 
 app.MapPost("/token", async ([FromBody] CodeAuthRequest request, [FromServices] DiscordClient client) =>
 {
@@ -36,5 +59,13 @@ app.MapPost("/token/user", async ([FromBody] CodeAuthRequest request, [FromServi
 
     return Results.Ok(user);
 });
+
+app.MapPost(
+    "/relay/allocate",
+    ([FromBody] RelayAllocationRequest request, [FromServices] GameRegistry reg) =>
+    {
+        return reg.CreateOrJoin(request);
+    }
+);
 
 app.Run();
