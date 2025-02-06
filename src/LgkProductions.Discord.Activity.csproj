@@ -8,7 +8,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\lib\Unity.Networking.Transport.Relay\Unity.Networking.Transport.Relay.csproj" />
+		<ProjectReference Include="..\lib\Unity.Networking.Transport.Relay\Unity.Networking.Transport.Relay.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="../README.md" />
 	</ItemGroup>
 
 </Project>
