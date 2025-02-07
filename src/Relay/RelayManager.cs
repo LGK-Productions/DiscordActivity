@@ -66,6 +66,10 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
                 }
             }
         }
+        catch (WebSocketException ex) when (ex.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
+        {
+            // Ignore termination
+        }
         catch (Exception ex)
         {
             _logger.ExceptionInRelayLoop(ex, socket);

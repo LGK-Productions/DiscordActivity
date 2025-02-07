@@ -29,13 +29,14 @@ app.Map(
     async ([FromServices] GameRegistry reg, [FromServices] RelayManager relayManager, HttpContext ctx, CancellationToken cancellation) =>
     {
         if (!ctx.WebSockets.IsWebSocketRequest)
-            return Results.BadRequest();
+        {
+            ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
 
         var socket = await ctx.WebSockets.AcceptWebSocketAsync();
 
         await relayManager.RunSocketLoopAsync(socket, cancellation);
-
-        return Results.Ok();
     }
 );
 
