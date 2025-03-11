@@ -21,12 +21,6 @@ builder.Services.AddSingleton<GameRegistry>();
 builder.Services.AddSingleton<RelayManager>();
 
 var app = builder.Build();
-app.UseCors(builder =>
-{
-    builder.WithOrigins(
-        app.Configuration.GetValue<string[]>("CorsOrigins") ?? []
-    );
-});
 app.UseWebSockets();
 
 app.Map(
