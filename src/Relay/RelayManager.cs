@@ -18,6 +18,8 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
     {
         _logger.NewSocket(socket);
 
+        var transaction = SentryUtils.StartChild("RelaySocketLoop");
+
         ConnectionInfo? connection = null;
         try
         {
@@ -31,16 +33,28 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
                 switch (header.Type)
                 {
                     case RelayMessageType.Bind:
-                        using (var bindRequest = reader.Read<RelayMessageBind>())
+                        var bindTransaction = transaction.StartChild("Bind");
+                        try
                         {
-                            connection = await OnBind(socket, bindRequest, cancellation);
+                            using var bindRequest = reader.Read<RelayMessageBind>();
+                            connection = await OnBind(socket, bindRequest, bindTransaction, cancellation);
+                        }
+                        finally
+                        {
+                            bindTransaction.Finish();
                         }
                         break;
 
                     case RelayMessageType.ConnectRequest when connection is not null:
-                        using (var connectRequest = reader.Read<RelayMessageConnectRequest>())
+                        var connectRequestTransaction = transaction.StartChild("ConnectRequest");
+                        try
                         {
-                            await OnConnectRequest(socket, connection.Value, connectRequest, cancellation);
+                            using var connectRequest = reader.Read<RelayMessageConnectRequest>();
+                            await OnConnectRequest(socket, connection.Value, connectRequest, connectRequestTransaction, cancellation);
+                        }
+                        finally
+                        {
+                            connectRequestTransaction.Finish();
                         }
                         break;
 
@@ -56,8 +70,16 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
                         break;
 
                     case RelayMessageType.Disconnect when connection is not null:
-                        var disconnectMessage = reader.Read<RelayMessageFromTo>();
-                        await OnDisconnect(socket, connection.Value, disconnectMessage, cancellation);
+                        var disconnectTransaction = transaction.StartChild("Disconnect");
+                        try
+                        {
+                            var disconnectMessage = reader.Read<RelayMessageFromTo>();
+                            await OnDisconnect(socket, connection.Value, disconnectMessage, disconnectTransaction, cancellation);
+                        }
+                        finally
+                        {
+                            disconnectTransaction.Finish();
+                        }
                         break;
 
                     default:
@@ -72,16 +94,18 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
         }
         catch (Exception ex)
         {
+            transaction.Finish(ex);
             _logger.ExceptionInRelayLoop(ex, socket);
         }
         finally
         {
+            transaction.Finish();
             _logger.SocketDisconnected(socket);
             OnConnectionTerminated(connection);
         }
     }
 
-    async ValueTask<ConnectionInfo?> OnBind(WebSocket socket, RelayMessageBind message, CancellationToken cancellation)
+    async ValueTask<ConnectionInfo?> OnBind(WebSocket socket, RelayMessageBind message, ISpan transaction, CancellationToken cancellation)
     {
         if (!ServerConnectionData.TryParse(message.ConnectionData.Span, out var connectData))
         {
@@ -97,6 +121,10 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
             return null;
         }
 
+        transaction.SetExtra("GameId", instance.Id);
+        transaction.SetExtra("InstanceId", instance.InstanceId);
+        transaction.SetExtra("PlayerId", player.Id);
+
         if (!player.TrySetSocket(socket))
         {
             // ToDo: Do we allow multiple binds?
@@ -110,7 +138,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
         return new ConnectionInfo(instance, player);
     }
 
-    async ValueTask OnConnectRequest(WebSocket socket, ConnectionInfo connection, RelayMessageConnectRequest connectRequest, CancellationToken cancellation)
+    async ValueTask OnConnectRequest(WebSocket socket, ConnectionInfo connection, RelayMessageConnectRequest connectRequest, ISpan transaction, CancellationToken cancellation)
     {
         if (connection.Player.Id != connectRequest.AllocationId)
             throw new UnreachableException("Relay message from wrong player");
@@ -132,6 +160,11 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
             await SendError(socket, connection.Player.Id, RelayErrorCode.Unauthorized, cancellation);
             return;
         }
+
+        transaction.SetExtra("GameId", targetInstance.Id);
+        transaction.SetExtra("InstanceId", targetInstance.InstanceId);
+        transaction.SetExtra("PlayerId", connectRequest.AllocationId);
+        transaction.SetExtra("ToPlayerId", targetPlayer.Id);
 
         EndianWriter writer = new(ShortDev.IO.Endianness.BigEndian);
         writer.Write(RelayHeader.Create(RelayMessageType.Accepted));
@@ -176,10 +209,13 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
         await targetSocket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation);
     }
 
-    static async ValueTask OnDisconnect(WebSocket socket, ConnectionInfo connection, RelayMessageFromTo message, CancellationToken cancellation)
+    static async ValueTask OnDisconnect(WebSocket socket, ConnectionInfo connection, RelayMessageFromTo message, ISpan transaction, CancellationToken cancellation)
     {
         if (connection.Player.Id != message.FromAllocationId)
             throw new UnreachableException("Relay message from wrong player");
+
+        transaction.SetExtra("PlayerId", message.FromAllocationId);
+        transaction.SetExtra("ToPlayerId", message.ToAllocationId);
 
         EndianWriter writer = new(ShortDev.IO.Endianness.BigEndian);
         writer.Write(RelayHeader.Create(RelayMessageType.Disconnect));
