@@ -3,17 +3,19 @@ using ShortDev.IO.Input;
 using ShortDev.IO.Output;
 using System.Buffers;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.WebSockets;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Relay.Messages;
 
 namespace LgkProductions.Discord.Activity.Relay;
 
-public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry registry)
+sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry registry)
 {
     readonly ILogger<RelayManager> _logger = logger;
     readonly GameRegistry _registry = registry;
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Don't crash the message loop")]
     public async Task RunSocketLoopAsync(WebSocket socket, CancellationToken cancellation)
     {
         _logger.NewSocket(socket);
@@ -25,7 +27,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
         {
             while (socket.State == WebSocketState.Open && !cancellation.IsCancellationRequested)
             {
-                var buffer = await socket.ReceiveAsync();
+                var buffer = await socket.ReceiveAsync().ConfigureAwait(false);
                 EndianReader reader = new(ShortDev.IO.Endianness.BigEndian, buffer.Span);
 
                 var header = reader.Read<RelayHeader>();
@@ -37,7 +39,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
                         try
                         {
                             using var bindRequest = reader.Read<RelayMessageBind>();
-                            connection = await OnBind(socket, bindRequest, bindTransaction, cancellation);
+                            connection = await OnBind(socket, bindRequest, bindTransaction, cancellation).ConfigureAwait(false);
                         }
                         finally
                         {
@@ -50,7 +52,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
                         try
                         {
                             using var connectRequest = reader.Read<RelayMessageConnectRequest>();
-                            await OnConnectRequest(socket, connection.Value, connectRequest, connectRequestTransaction, cancellation);
+                            await OnConnectRequest(socket, connection.Value, connectRequest, connectRequestTransaction, cancellation).ConfigureAwait(false);
                         }
                         finally
                         {
@@ -61,7 +63,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
                     case RelayMessageType.Relay when connection is not null:
                         using (var relayMessage = reader.Read<RelayMessageRelay>())
                         {
-                            await OnRelay(socket, connection.Value, relayMessage, cancellation);
+                            await OnRelay(socket, connection.Value, relayMessage, cancellation).ConfigureAwait(false);
                         }
                         break;
 
@@ -74,7 +76,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
                         try
                         {
                             var disconnectMessage = reader.Read<RelayMessageFromTo>();
-                            await OnDisconnect(socket, connection.Value, disconnectMessage, disconnectTransaction, cancellation);
+                            await OnDisconnect(socket, connection.Value, disconnectMessage, disconnectTransaction, cancellation).ConfigureAwait(false);
                         }
                         finally
                         {
@@ -109,7 +111,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
     {
         if (!ServerConnectionData.TryParse(message.ConnectionData.Span, out var connectData))
         {
-            await SendError(socket, default, RelayErrorCode.NotConnected, cancellation);
+            await SendError(socket, default, RelayErrorCode.NotConnected, cancellation).ConfigureAwait(false);
             return null;
         }
 
@@ -117,7 +119,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
 
         if (!_registry.TryGetConnection(connectData, out var instance, out var player))
         {
-            await SendError(socket, default, RelayErrorCode.NotConnected, cancellation);
+            await SendError(socket, default, RelayErrorCode.NotConnected, cancellation).ConfigureAwait(false);
             return null;
         }
 
@@ -133,7 +135,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
         EndianWriter writer = new(ShortDev.IO.Endianness.BigEndian);
         writer.Write(RelayHeader.Create(RelayMessageType.BindReceived));
 
-        await socket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation);
+        await socket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation).ConfigureAwait(false);
 
         return new ConnectionInfo(instance, player);
     }
@@ -145,19 +147,19 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
 
         if (!ServerConnectionData.TryParse(connectRequest.ToConnectionData.Span, out var connectData))
         {
-            await SendError(socket, connection.Player.Id, RelayErrorCode.AllocationIdNotFound, cancellation);
+            await SendError(socket, connection.Player.Id, RelayErrorCode.AllocationIdNotFound, cancellation).ConfigureAwait(false);
             return;
         }
 
         if (!_registry.TryGetConnection(connectData, out var targetInstance, out var targetPlayer))
         {
-            await SendError(socket, connection.Player.Id, RelayErrorCode.AllocationIdNotFound, cancellation);
+            await SendError(socket, connection.Player.Id, RelayErrorCode.AllocationIdNotFound, cancellation).ConfigureAwait(false);
             return;
         }
 
         if (targetInstance != connection.Game)
         {
-            await SendError(socket, connection.Player.Id, RelayErrorCode.Unauthorized, cancellation);
+            await SendError(socket, connection.Player.Id, RelayErrorCode.Unauthorized, cancellation).ConfigureAwait(false);
             return;
         }
 
@@ -174,7 +176,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
             ToAllocationId = connectRequest.AllocationId
         });
 
-        await socket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation);
+        await socket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation).ConfigureAwait(false);
     }
 
     async ValueTask OnRelay(WebSocket socket, ConnectionInfo connection, RelayMessageRelay message, CancellationToken cancellation)
@@ -184,13 +186,13 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
 
         if (!connection.Game.TryGetPlayer(message.Header.ToAllocationId, out var targetPlayer))
         {
-            await SendError(socket, connection.Player.Id, RelayErrorCode.AllocationIdNotFound, cancellation);
+            await SendError(socket, connection.Player.Id, RelayErrorCode.AllocationIdNotFound, cancellation).ConfigureAwait(false);
             return;
         }
 
         if (!targetPlayer.TryGetValidSocket(out var targetSocket))
         {
-            await SendError(socket, connection.Player.Id, RelayErrorCode.NotConnected, cancellation);
+            await SendError(socket, connection.Player.Id, RelayErrorCode.NotConnected, cancellation).ConfigureAwait(false);
             return;
         }
 
@@ -206,7 +208,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
             Payload = message.Payload
         });
 
-        await targetSocket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation);
+        await targetSocket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation).ConfigureAwait(false);
     }
 
     static async ValueTask OnDisconnect(WebSocket socket, ConnectionInfo connection, RelayMessageFromTo message, ISpan transaction, CancellationToken cancellation)
@@ -221,7 +223,7 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
         writer.Write(RelayHeader.Create(RelayMessageType.Disconnect));
         writer.Write(message);
 
-        await socket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation);
+        await socket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation).ConfigureAwait(false);
     }
 
     void OnConnectionTerminated(ConnectionInfo? connection)
@@ -250,6 +252,6 @@ public sealed class RelayManager(ILogger<RelayManager> logger, GameRegistry regi
 
         _logger.SendingError(socket, error, error.GetDescription());
 
-        await socket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation);
+        await socket.SendAsync(writer.Buffer.AsMemory(), WebSocketMessageType.Binary, endOfMessage: true, cancellation).ConfigureAwait(false);
     }
 }

@@ -4,7 +4,7 @@ using Unity.Networking.Transport.Relay;
 
 namespace LgkProductions.Discord.Activity.Relay;
 
-public readonly record struct ServerConnectionData(Guid GameId, RelayAllocationId AllocationId)
+readonly record struct ServerConnectionData(Guid GameId, RelayAllocationId AllocationId)
 {
     public string ToBase64String()
     {

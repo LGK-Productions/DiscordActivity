@@ -5,7 +5,7 @@ using Unity.Networking.Transport.Relay.Messages;
 
 namespace LgkProductions.Discord.Activity;
 
-public static partial class Log
+static partial class Log
 {
     [LoggerMessage(Level = LogLevel.Debug, Message = "New socket {socket}")]
     public static partial void NewSocket(this ILogger<RelayManager> logger, WebSocket socket);

@@ -33,15 +33,15 @@ app.Map(
             return;
         }
 
-        var socket = await ctx.WebSockets.AcceptWebSocketAsync();
+        var socket = await ctx.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
 
-        await relayManager.RunSocketLoopAsync(socket, cancellation);
+        await relayManager.RunSocketLoopAsync(socket, cancellation).ConfigureAwait(false);
     }
 );
 
 app.MapPost("/token", async ([FromBody] CodeAuthRequest request, [FromServices] DiscordClient client) =>
 {
-    var token = await client.RequestAccessTokenAsync(request.Code);
+    var token = await client.RequestAccessTokenAsync(request.Code).ConfigureAwait(false);
     if (token is null)
         return Results.BadRequest("Invalid code");
 
@@ -50,11 +50,11 @@ app.MapPost("/token", async ([FromBody] CodeAuthRequest request, [FromServices] 
 
 app.MapPost("/token/user", async ([FromBody] CodeAuthRequest request, [FromServices] DiscordClient client) =>
 {
-    var token = await client.RequestAccessTokenAsync(request.Code);
+    var token = await client.RequestAccessTokenAsync(request.Code).ConfigureAwait(false);
     if (token is null)
         return Results.BadRequest("Invalid code");
 
-    var user = await client.RequestUserAsync(token);
+    var user = await client.RequestUserAsync(token).ConfigureAwait(false);
     if (token is null)
         return Results.BadRequest("Invalid token");
 

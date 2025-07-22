@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace Unity.Networking.Transport.Relay.Messages;
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct RelayHeader : IMessage<RelayHeader>
+public readonly record struct RelayHeader : IMessage<RelayHeader>
 {
     const ushort DefaultSignature = 0xDA72;
     const ushort DefaultSignatureLittleEndian = 0x72DA;

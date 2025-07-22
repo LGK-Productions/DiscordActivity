@@ -2,7 +2,7 @@
 
 namespace LgkProductions.Discord.Activity.Auth;
 
-public record DiscordTokenResponse
+sealed record DiscordTokenResponse
 {
     [JsonPropertyName("access_token")]
     public required string AccessToken { get; init; }

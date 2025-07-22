@@ -9,7 +9,7 @@ namespace LgkProductions.Discord.Activity;
 [JsonSerializable(typeof(CodeAuthRequest))]
 [JsonSerializable(typeof(RelayAllocationRequest))]
 [JsonSerializable(typeof(RelayAllocation))]
-internal partial class AppJsonSerializerContext : JsonSerializerContext
+internal sealed partial class AppJsonSerializerContext : JsonSerializerContext
 {
     public static void Register(WebApplicationBuilder builder)
     {

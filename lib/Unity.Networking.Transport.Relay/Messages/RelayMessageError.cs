@@ -3,7 +3,7 @@ using ShortDev.IO.Output;
 
 namespace Unity.Networking.Transport.Relay.Messages;
 
-public readonly struct RelayMessageError : IMessage<RelayMessageError>
+public readonly record struct RelayMessageError : IMessage<RelayMessageError>
 {
     public required RelayAllocationId AllocationId { get; init; }
     public required RelayErrorCode ErrorCode { get; init; }

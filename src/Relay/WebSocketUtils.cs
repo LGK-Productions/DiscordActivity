@@ -14,7 +14,7 @@ internal static class WebSocketUtils
         byte[] buffer = HeaderPool.Rent(RelayHeader.Size);
         try
         {
-            var result = await socket.ReceiveAsync((Memory<byte>)buffer, cancellation);
+            var result = await socket.ReceiveAsync((Memory<byte>)buffer, cancellation).ConfigureAwait(false);
 
             EndianReader reader = new(ShortDev.IO.Endianness.BigEndian, buffer);
             return RelayHeader.Parse(ref reader);
@@ -34,7 +34,7 @@ internal static class WebSocketUtils
             writer.Buffer.AsMemory(), WebSocketMessageType.Binary,
             endOfMessage,
             cancellation
-        );
+        ).ConfigureAwait(false);
     }
 
     const int WebSocketChunkSize = 1024;
@@ -48,7 +48,7 @@ internal static class WebSocketUtils
         ValueWebSocketReceiveResult result;
         do
         {
-            result = await socket.ReceiveAsync(writer.GetMemory(WebSocketChunkSize), CancellationToken.None);
+            result = await socket.ReceiveAsync(writer.GetMemory(WebSocketChunkSize), CancellationToken.None).ConfigureAwait(false);
             writer.Advance(result.Count);
         } while (!result.EndOfMessage);
 

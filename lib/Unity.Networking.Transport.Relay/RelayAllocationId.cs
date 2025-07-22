@@ -38,5 +38,8 @@ public sealed class RelayAllocationIdConverter : JsonConverter<RelayAllocationId
         => new(reader.GetGuid());
 
     public override void Write(Utf8JsonWriter writer, RelayAllocationId value, JsonSerializerOptions options)
-        => writer.WriteStringValue(value.Value.ToString());
+    {
+        Debug.Assert(writer is not null);
+        writer.WriteStringValue(value.Value.ToString());
+    }
 }

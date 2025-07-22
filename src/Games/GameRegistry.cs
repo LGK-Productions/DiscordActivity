@@ -6,7 +6,7 @@ using ConnectionInfo = LgkProductions.Discord.Activity.Relay.ConnectionInfo;
 
 namespace LgkProductions.Discord.Activity.Games;
 
-public sealed class GameRegistry
+sealed class GameRegistry
 {
     readonly ConcurrentDictionary<string, GameInstance> _games = new();
     readonly ConcurrentDictionary<ServerConnectionData, ConnectionInfo> _connectionLookup = [];
@@ -48,7 +48,7 @@ public sealed class GameRegistry
 
     sealed record CreateOrJoinActivity(RelayAllocationRequest Request)
     {
-        public GamePlayerInfo? Player { get; set; } = null;
+        public GamePlayerInfo? Player { get; set; }
     }
 
     public bool TryGetConnection(ServerConnectionData connectionData, [MaybeNullWhen(false)] out GameInstance game, [MaybeNullWhen(false)] out GamePlayerInfo player)

@@ -2,4 +2,4 @@
 
 namespace LgkProductions.Discord.Activity.Relay;
 
-public readonly record struct ConnectionInfo(GameInstance Game, GamePlayerInfo Player);
+readonly record struct ConnectionInfo(GameInstance Game, GamePlayerInfo Player);

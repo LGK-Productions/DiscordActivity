@@ -4,7 +4,7 @@ using Unity.Networking.Transport.Relay;
 
 namespace LgkProductions.Discord.Activity.Games;
 
-public record GamePlayerInfo(RelayAllocationId Id)
+sealed record GamePlayerInfo(RelayAllocationId Id)
 {
     WebSocket? _currentSocket;
 
@@ -28,6 +28,6 @@ public record GamePlayerInfo(RelayAllocationId Id)
         if (!TryGetValidSocket(out var socket))
             return;
 
-        await socket.CloseAsync(WebSocketCloseStatus.EndpointUnavailable, "Host disconnected", default);
+        await socket.CloseAsync(WebSocketCloseStatus.EndpointUnavailable, "Host disconnected", default).ConfigureAwait(false);
     }
 }

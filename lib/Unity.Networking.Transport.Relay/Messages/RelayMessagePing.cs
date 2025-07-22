@@ -3,7 +3,7 @@ using ShortDev.IO.Output;
 
 namespace Unity.Networking.Transport.Relay.Messages;
 
-public readonly struct RelayMessagePing : IMessage<RelayMessagePing>
+public readonly record struct RelayMessagePing : IMessage<RelayMessagePing>
 {
     public required RelayAllocationId FromAllocationId { get; init; }
     public required ushort SequenceNumber { get; init; }

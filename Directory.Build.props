@@ -5,4 +5,8 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<LangVersion>preview</LangVersion>
 	</PropertyGroup>
+
+	<PropertyGroup>
+		<AnalysisLevel>latest-all</AnalysisLevel>
+	</PropertyGroup>
 </Project>

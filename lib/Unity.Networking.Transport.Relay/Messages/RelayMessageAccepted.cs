@@ -3,7 +3,7 @@ using ShortDev.IO.Output;
 
 namespace Unity.Networking.Transport.Relay.Messages;
 
-public readonly struct RelayMessageAccepted : IMessage<RelayMessageAccepted>
+public readonly record struct RelayMessageAccepted : IMessage<RelayMessageAccepted>
 {
     public required RelayMessageFromTo Header { get; init; }
 

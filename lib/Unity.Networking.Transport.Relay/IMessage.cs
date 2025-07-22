@@ -1,5 +1,6 @@
 ﻿using ShortDev.IO.Input;
 using ShortDev.IO.Output;
+using System.Diagnostics;
 
 namespace Unity.Networking.Transport.Relay;
 
@@ -12,7 +13,10 @@ public interface IMessage<TSelf> where TSelf : IMessage<TSelf>
 public static class MessageExtensions
 {
     public static void Write<T>(this ref EndianWriter writer, in IMessage<T> message) where T : IMessage<T>
-        => message.Write(ref writer);
+    {
+        Debug.Assert(message is not null);
+        message.Write(ref writer);
+    }
 
     public static T Read<T>(this ref EndianReader reader) where T : IMessage<T>
         => T.Parse(ref reader);

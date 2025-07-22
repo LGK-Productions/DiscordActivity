@@ -6,7 +6,7 @@ using Unity.Networking.Transport.Relay;
 
 namespace LgkProductions.Discord.Activity.Games;
 
-public record GameInstance(string InstanceId, GamePlayerInfo Host) : IEnumerable<GamePlayerInfo>
+sealed record GameInstance(string InstanceId, GamePlayerInfo Host) : IEnumerable<GamePlayerInfo>
 {
     public Guid Id { get; } = Guid.NewGuid();
     public ReadOnlyMemory<byte> Key { get; } = RandomNumberGenerator.GetBytes(64);

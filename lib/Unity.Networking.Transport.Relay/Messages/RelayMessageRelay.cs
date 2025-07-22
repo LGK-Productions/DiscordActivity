@@ -4,7 +4,7 @@ using System.Buffers;
 
 namespace Unity.Networking.Transport.Relay.Messages;
 
-public readonly struct RelayMessageRelay : IMessage<RelayMessageRelay>, IDisposable
+public readonly record struct RelayMessageRelay : IMessage<RelayMessageRelay>, IDisposable
 {
     public required RelayMessageFromTo Header { get; init; }
     public required ReadOnlyMemory<byte> Payload { get; init; }
