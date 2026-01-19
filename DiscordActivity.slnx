@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/build/">
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Folder Name="/lib/">
+    <Project Path="lib/Unity.Networking.Transport.Relay/Unity.Networking.Transport.Relay.csproj" />
+  </Folder>
+  <Project Path="src/LgkProductions.Discord.Activity.csproj" />
+</Solution>
